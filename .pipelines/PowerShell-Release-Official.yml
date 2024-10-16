@@ -262,6 +262,7 @@ extends:
             Update and merge the changelog for the release.
             This step is required for creating GitHub draft release.
 
+    # Ev2 deployment, p5
     - stage: BlobPublic
       displayName: Make Blob Public
       dependsOn: UpdateChangeLog
@@ -270,12 +271,14 @@ extends:
         parameters:
           SkipPSInfraInstallers: ${{ parameters.SkipPSInfraInstallers }}
 
+    # deploy box, p4
     - stage: PublishGitHubRelease
       displayName: Publish GitHub Release
       dependsOn: BlobPublic
       jobs:
       - template: /.pipelines/templates/release-githubtasks.yml@self
 
+    # deploy box, p4
     - stage: PublishNuGet
       displayName: Publish NuGet
       dependsOn: PublishGitHubRelease
@@ -284,6 +287,7 @@ extends:
         parameters:
           skipPublish: true
 
+    # ev2 deployment, p5
     - stage: PublishPMC
       displayName: Publish PMC
       dependsOn: PublishGitHubRelease
@@ -292,6 +296,7 @@ extends:
         parameters:
           skipPublish: ${{ parameters.SkipPMCPublish }}
 
+    # launched another pipeline
     - stage: ReleaseDocker
       dependsOn: PublishGitHubRelease
       displayName: 'Docker Release'
@@ -311,6 +316,7 @@ extends:
           instructions: |
             Kickoff docker release
 
+    # manual
     - stage: UpdateDotnetDocker
       dependsOn: PublishGitHubRelease
       displayName: Update DotNet SDK Docker images
@@ -326,6 +332,7 @@ extends:
             3. dotnet run --project .\eng\update-dependencies\ -- <dotnetversion> --product-version powershell=<powershellversion> --compute-shas
             4. create PR targeting nightly branch
 
+    # manual
     - stage: UpdateWinGet
       dependsOn: PublishGitHubRelease
       displayName: Add manifest entry to winget
@@ -337,6 +344,7 @@ extends:
           instructions: |
             This is typically done by the community 1-2 days after the release.
 
+    # manual
     - stage: PublishMsix
       dependsOn: PublishGitHubRelease
       displayName: Publish MSIX to store
@@ -347,7 +355,7 @@ extends:
           jobName: PublishMsix
           instructions: |
             Ask Steve to release MSIX bundle package to Store
-
+    # manual
     - stage: PublishVPack
       dependsOn: PublishGitHubRelease
       displayName: Release vPack
@@ -366,18 +374,21 @@ extends:
     #   jobs:
     #   - template: templates/release-UpdateDepsJson.yml
 
+    # EV2 deployment, p5
     - stage: UploadBuildInfoJson
       dependsOn: PublishGitHubRelease
       displayName: Upload BuildInfo.json
       jobs:
       - template: /.pipelines/templates/release-upload-buildinfo.yml@self
 
+    #  🤷🏻‍♂️
     - stage: ReleaseSymbols
       dependsOn: PublishGitHubRelease
       displayName: Release Symbols
       jobs:
       - template: /.pipelines/templates/release-symbols.yml@self
 
+    # manual
     - stage: ChangesToMaster
       displayName: Ensure changes are in GH master
       dependsOn: ['PublishNuGet', 'PublishPMC']
@@ -389,6 +400,7 @@ extends:
           instructions: |
             Make sure that changes README.md and metadata.json are merged into master on GitHub.
 
+    # manual
     - stage: ReleaseSnap
       displayName: Release Snap
       dependsOn: 'ChangesToMaster'
@@ -399,7 +411,8 @@ extends:
           jobName: PublishSnapJob
           instructions: |
             Publish Snap
-
+            
+    # manual
     - stage: ReleaseToMU
       displayName: Release to MU
       dependsOn: ['PublishNuGet', 'PublishPMC', 'ChangesToMaster']
@@ -410,6 +423,7 @@ extends:
           instructions: |
             Notify the PM team to start the process of releasing to MU.
 
+    # manual
     - stage: ReleaseClose
       displayName: Finish Release
       dependsOn: ['ReleaseToMU', 'ReleaseSymbols', 'ReleaseSnap']
@@ -421,6 +435,7 @@ extends:
           instructions: |
             Retain the build
 
+      # manual
       - template: /.pipelines/templates/approvalJob.yml@self
         parameters:
           displayName: Delete release branch
